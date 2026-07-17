@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Data
+data/input/
+data/output/
+data/processed/
+
+# Database
+*.db
+*.sqlite3
+
+# Secrets
+.env
+
+# VS Code
+.vscode/
