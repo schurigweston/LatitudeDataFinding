@@ -5,7 +5,7 @@ tools for querying and analyzing SIM usage.
 
 ## AI disclaimer
 
-All the code was written by AI, with only minor changes by human. 
+All the code was written by AI, including most of this README.md, with only minor changes by human. 
 I'm the one that decided to use a database though. 
 
 ## Features
