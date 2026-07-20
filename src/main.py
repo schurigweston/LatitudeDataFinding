@@ -3,16 +3,15 @@ import sqlite3
 with sqlite3.connect("sim_uses.db") as source:
     rows = source.execute("""
         SELECT DISTINCT
-            CalledParty
+            ICCID
         FROM usage
-        WHERE ICCID = '89010303300162373014'
-          AND UsageType = 'SMS-MT';
+        WHERE CalledParty = '00000000000000000911';
     """).fetchall()
 
-with sqlite3.connect("uniqueIncomginMessages89010303300162373014.db") as dest:
+with sqlite3.connect("called911AtLeastOnce.db") as dest:
     dest.execute("""
         CREATE TABLE IF NOT EXISTS sms (
-            CalledParty TEXT
+            ICCID TEXT
         )
     """)
 

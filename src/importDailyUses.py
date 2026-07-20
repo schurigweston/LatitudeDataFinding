@@ -46,9 +46,12 @@ with sqlite3.connect(DB_PATH) as conn:
                 )
 
                 rows = []
-                i = 0
+                i = 0 #used for when I want only X entries
                 for row in reader:
-
+                    #
+                    #i = i+1
+                    #if i > 100:
+                    #   break
                     rows.append((
                         row["AccountId"],
                         row["SubscriptionId"],
@@ -74,9 +77,7 @@ with sqlite3.connect(DB_PATH) as conn:
                         row["CallingParty"],
                         zip_path.name
                     ))
-                    i = i+1
-                    if i >= 100:
-                        break
+                    
 
                 cursor.executemany("""
                     INSERT INTO usage VALUES (
