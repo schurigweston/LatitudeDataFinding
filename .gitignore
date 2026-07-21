@@ -12,6 +12,7 @@ data/processed/
 # Database
 *.db
 *.sqlite3
+*.csv
 
 # Secrets
 .env
