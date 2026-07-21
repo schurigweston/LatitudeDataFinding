@@ -6,7 +6,7 @@ tools for querying and analyzing SIM usage.
 ## AI disclaimer
 
 All the code was written by AI, including most of this README.md, with only minor changes by human. 
-I'm the one that decided to use a database though. 
+I'm the one that decided to use a database though, so there. 
 
 ## Features
 
@@ -19,13 +19,12 @@ I'm the one that decided to use a database though.
 
 ```
 src/
-    create_database.py
-    import_usage_reports.py
-    queries.py
+    code and scripts
 
 data/
     input/
         DailyUsageReports/
+        other things
 
 sim_uses.db
 ```
@@ -37,23 +36,7 @@ sim_uses.db
 
 ## Usage
 
-Create the database:
-
-```bash
-python src/create_database.py
-```
-
-Import reports:
-
-```bash
-python src/import_usage_reports.py
-```
-
-Run queries:
-
-```bash
-python src/queries.py
-```
+I'll need to update usage at the end.
 
 ## Notes
 
