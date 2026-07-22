@@ -4,6 +4,7 @@ from pathlib import Path
 import sqlite3
 from config import DB_PATH
 from zipCSVReader import get_single_csv_name, read_csv_rows
+from fileHashTracker import compute_file_hash, has_been_loaded, record_loaded_file
 
 REPORT_FOLDER = (
     Path(__file__).parent.parent
@@ -81,75 +82,80 @@ def validate_header(fieldnames):
 
 def importSimInventory(db_path=DB_PATH, report_folder=REPORT_FOLDER):
 
-    zip_path = pick_inventory_file(report_folder)
-
-    print(f"Importing {zip_path.name}")
-
-    csv_name = get_single_csv_name(zip_path)
-
-    if csv_name is None:
-        raise ValueError(f"Expected exactly one CSV inside {zip_path.name}")
-
-    rows_iter = read_csv_rows(zip_path, csv_name)
-
-    # peek at the header via the underlying DictReader's fieldnames
-    import zipfile
-    import csv
-    with zipfile.ZipFile(zip_path) as z:
-        with z.open(csv_name) as csv_file:
-            reader = csv.DictReader(
-                (line.decode("utf-8") for line in csv_file)
-            )
-            validate_header(reader.fieldnames)
-
-    rows = []
-    for row in read_csv_rows(zip_path, csv_name):
-        rows.append((
-            row["ServiceTypeName"],
-            row["Iccid_esn"],
-            row["Eid"],
-            row["Msisdn"],
-            row["Imsi"],
-            row["CreatedDate"],
-            row["IpAddress"],
-            row["ApnFeature"],
-            row["State"],
-            row["ServiceTypeId"],
-            row["Imei"],
-            row["ProductOffer"],
-            row["DataPlan"],
-            row["CostCenterId"],
-            row["CostCenterName"],
-            row["Model"],
-            row["Serial"],
-            row["SubscriptionId"],
-            row["LastStockedDate"],
-            row["LastActivatedDate"],
-            row["LastSuspendedDate"],
-            row["LastDeactivatedDate"],
-            row["StockOrderRequestId"],
-            row["SessionStatus"],
-            row["ProfileRole"],
-            row["[State]"],
-            row["[Profile Role]"],
-            row["[Data Feature]"],
-            row["[SMS Feature]"],
-            row["[Voice Feature]"],
-            row["[Roaming Feature]"],
-            row["[Other Feature]"],
-            row["[Profile ID]"],
-            row["[APN]"],
-            row["[Customer Address]"],
-            row["[Customer Name]"],
-            row["[Customer Number]"],
-            row["[Firmware Version ]"],
-            row["[IMEI]"],
-            row["[Order Number]"],
-            zip_path.name
-        ))
-
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
+
+        zip_path = pick_inventory_file(report_folder)
+
+        file_hash = compute_file_hash(zip_path)
+
+        if has_been_loaded(conn, file_hash):
+            print(f"Already imported, skipping: {zip_path.name}")
+            print("Done!")
+            return
+
+        print(f"Importing {zip_path.name}")
+
+        csv_name = get_single_csv_name(zip_path)
+
+        if csv_name is None:
+            raise ValueError(f"Expected exactly one CSV inside {zip_path.name}")
+
+        # peek at the header via the underlying DictReader's fieldnames
+        import zipfile
+        import csv
+        with zipfile.ZipFile(zip_path) as z:
+            with z.open(csv_name) as csv_file:
+                reader = csv.DictReader(
+                    (line.decode("utf-8") for line in csv_file)
+                )
+                validate_header(reader.fieldnames)
+
+        rows = []
+        for row in read_csv_rows(zip_path, csv_name):
+            rows.append((
+                row["ServiceTypeName"],
+                row["Iccid_esn"],
+                row["Eid"],
+                row["Msisdn"],
+                row["Imsi"],
+                row["CreatedDate"],
+                row["IpAddress"],
+                row["ApnFeature"],
+                row["State"],
+                row["ServiceTypeId"],
+                row["Imei"],
+                row["ProductOffer"],
+                row["DataPlan"],
+                row["CostCenterId"],
+                row["CostCenterName"],
+                row["Model"],
+                row["Serial"],
+                row["SubscriptionId"],
+                row["LastStockedDate"],
+                row["LastActivatedDate"],
+                row["LastSuspendedDate"],
+                row["LastDeactivatedDate"],
+                row["StockOrderRequestId"],
+                row["SessionStatus"],
+                row["ProfileRole"],
+                row["[State]"],
+                row["[Profile Role]"],
+                row["[Data Feature]"],
+                row["[SMS Feature]"],
+                row["[Voice Feature]"],
+                row["[Roaming Feature]"],
+                row["[Other Feature]"],
+                row["[Profile ID]"],
+                row["[APN]"],
+                row["[Customer Address]"],
+                row["[Customer Name]"],
+                row["[Customer Number]"],
+                row["[Firmware Version ]"],
+                row["[IMEI]"],
+                row["[Order Number]"],
+                zip_path.name
+            ))
 
         cursor.execute("DELETE FROM sim_inventory")
 
@@ -173,6 +179,8 @@ def importSimInventory(db_path=DB_PATH, report_folder=REPORT_FOLDER):
                         ?
                     )
                 """, rows)
+
+        record_loaded_file(conn, zip_path.name, file_hash, "sim_inventory", len(rows))
 
         conn.commit()
 

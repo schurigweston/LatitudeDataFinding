@@ -8,7 +8,7 @@ import createSimsInventory
 def createDatabase():
     createAllRawMonthDefaultUsage.createAllRawMonthDefaultUsage()
     createDailyUsage.createDailyUsageDatabase()
-    createImportedFileHash.createImportedFilehash()
+    createImportedFileHash.createImportedFileHash()
     createRollingLastUsage.createRollingLastUsage()
     createSimsInventory.createSimsInventory()
 
