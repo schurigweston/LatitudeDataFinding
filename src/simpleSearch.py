@@ -1,10 +1,10 @@
 import sqlite3
 
-with sqlite3.connect("sim_uses.db") as source:
+with sqlite3.connect("SIM_USAGE.db") as source:
     rows = source.execute("""
-        SELECT DISTINCT
+        SELECT
             ICCID
-        FROM usage
+        FROM daily_usage
         WHERE CalledParty = '00000000000000000911';
     """).fetchall()
 

@@ -1,7 +1,7 @@
 import sqlite3
 import csv
 
-DATABASE = "sim_uses.db"
+DATABASE = "SIM_USAGE.db"
 TABLE = "usage"
 OUTPUT = "usage.csv"
 
