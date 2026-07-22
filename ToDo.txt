@@ -1,8 +1,1 @@
-Create a database that contains all the important tables. Change the architecture to put all the 4 important tables in one database.
-
-Pasted a table from claude, didn't work to well but oh well. 
-Table	Grain (1 row =)	Update pattern	Primary key	Role
-sim_inventory	one ICCID, current state	overwrite/upsert — refresh in full each pull	ICCID	Answers criteria 3 & 4 directly (SessionStatus, LastActivated/Deactivated dates). Also your source for warranty-anchor date, whatever you land on.
-usage_monthly_history	one ICCID, one month pulled	append-only — never touch old rows	(ICCID, month)	Audit trail / raw material. Keeps every monthly snapshot forever so you can always re-derive the rollup or investigate a specific month.
-subscription_last_usage	one ICCID, all-time	upsert via MAX(), ignoring blanks	ICCID	The table your daily eligibility check actually reads. Answers criteria 2.
-usage_events	one real usage event (data session/SMS/call)	append-only	UsageHash	Ground truth log. Feeds into the MAX() for subscription_last_usage, and lets you drill into specifics (e.g. "was that a 911 call") if you ever need to explain a result.
+Now to start crunching and combining tables.
