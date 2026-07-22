@@ -1,9 +1,7 @@
 from pathlib import Path
 import sqlite3
-import csv
-import zipfile
-
-DB_PATH = Path(__file__).parent.parent / "sim_uses_small_sample.db"
+from config import DB_PATH
+from zipCSVReader import get_single_csv_name, read_csv_rows
 
 REPORT_FOLDER = (
     Path(__file__).parent.parent
@@ -12,81 +10,87 @@ REPORT_FOLDER = (
     / "DailyUsageReports"
 )
 
+
 def to_int(value):
     if value == "":
         return None
-    return int(value) 
+    return int(value)
 
-with sqlite3.connect(DB_PATH) as conn:
 
-    cursor = conn.cursor()
+def importDailyUses(db_path=DB_PATH, report_folder=REPORT_FOLDER):
 
-    zip_files = sorted(REPORT_FOLDER.glob("*.zip"))
+    with sqlite3.connect(db_path) as conn:
 
-    for zip_path in zip_files:
+        cursor = conn.cursor()
 
-        print(f"Importing {zip_path.name}")
+        zip_files = sorted(report_folder.glob("*.zip"))
 
-        with zipfile.ZipFile(zip_path) as z:
+        for zip_path in zip_files:
 
-            csv_names = [
-                name
-                for name in z.namelist()
-                if name.lower().endswith(".csv")
-            ]
+            print(f"Importing {zip_path.name}")
 
-            if len(csv_names) != 1:
+            csv_name = get_single_csv_name(zip_path)
+
+            if csv_name is None:
                 print("Skipping:", zip_path.name)
                 continue
 
-            with z.open(csv_names[0]) as csv_file:
+            rows = []
+            i = 0  # used for when I want only X entries
+            for row in read_csv_rows(zip_path, csv_name):
 
-                reader = csv.DictReader(
-                    (line.decode("utf-8") for line in csv_file)
+                if db_path.name == "SIM_USAGE_TESTING.db":
+                    i = i + 1
+                    if i > 100:
+                        break
+
+                rows.append((
+                    row["AccountId"],
+                    row["SubscriptionId"],
+                    row["CostCenterName"],
+                    row["APN"],
+                    row["ServiceType"],
+                    row["AirtimeClass"],
+                    row["ICCID"],
+                    row["IMSI"],
+                    row["MSISDN"],
+                    row["IMEI"],
+                    row["UsageType"],
+                    row["ExactUsageTime"],
+                    to_int(row["UsageAmount"]),
+                    to_int(row["MNC"]),
+                    to_int(row["MCC"]),
+                    row["ParentOrgUrn"],
+                    row["BilledOrgChild"],
+                    to_int(row["SessionDuration"]),
+                    row["UsageEndTime"],
+                    row["CalledParty"],
+                    row["UsageHash"],
+                    row["CallingParty"],
+                    zip_path.name
+                ))
+
+            cursor.executemany("""
+                INSERT INTO daily_usage (
+                    AccountId, SubscriptionId, CostCenterName, APN,
+                    ServiceType, AirtimeClass, ICCID, IMSI, MSISDN, IMEI,
+                    UsageType, ExactUsageTime, UsageAmount, MNC, MCC,
+                    ParentOrgUrn, BilledOrgChild, SessionDuration,
+                    UsageEndTime, CalledParty, UsageHash, CallingParty,
+                    SourceFile
+                ) VALUES (
+                    ?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?,?,?,?,?,?,?,?,
+                    ?,?,?
                 )
+            """, rows)
 
-                rows = []
-                i = 0 #used for when I want only X entries
-                for row in reader:
-                    #
-                    #i = i+1
-                    #if i > 100:
-                    #   break
-                    rows.append((
-                        row["AccountId"],
-                        row["SubscriptionId"],
-                        row["CostCenterName"],
-                        row["APN"],
-                        row["ServiceType"],
-                        row["AirtimeClass"],
-                        row["ICCID"],
-                        row["IMSI"],
-                        row["MSISDN"],
-                        row["IMEI"],
-                        row["UsageType"],
-                        row["ExactUsageTime"],
-                        to_int(row["UsageAmount"]),
-                        to_int(row["MNC"]),
-                        to_int(row["MCC"]),
-                        row["ParentOrgUrn"],
-                        row["BilledOrgChild"],
-                        to_int(row["SessionDuration"]),
-                        row["UsageEndTime"],
-                        row["CalledParty"],
-                        row["UsageHash"],
-                        row["CallingParty"],
-                        zip_path.name
-                    ))
-                    
+            print(f"Imported {len(rows):,} rows")
 
-                cursor.executemany("""
-                    INSERT INTO usage VALUES (
-                        ?,?,?,?,?,?,?,?,?,?,
-                        ?,?,?,?,?,?,?,?,?,?,
-                        ?,?,?
-                    )
-                """, rows)
+        conn.commit()
 
-        print(f"Imported {len(rows):,} rows")
+    print("Done!")
 
-print("Done!")
+
+if __name__ == "__main__":
+    importDailyUses()
